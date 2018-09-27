@@ -5,7 +5,7 @@ try:
     import cv2, youtube_dl
 
 except ImportError:
-    subprocess.run(['pip3', 'install', '--user', '-r', 'req.txt'])
+    subprocess.run(['pip3', 'install', '--user', '-r', 'requirements.txt'])
 
 finally:
     import cv2, youtube_dl
