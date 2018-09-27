@@ -5,7 +5,6 @@ import os
 import json
 import youtube_dl
 import cv2
-import numpy as np
 
 
 def signal_handler(sig, frame):
