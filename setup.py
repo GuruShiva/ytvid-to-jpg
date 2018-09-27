@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-import pip
+import subprocess
 
 try:
     import cv2, youtube_dl
 
 except ImportError:
-    pip.main(['install', '-r', '--user', 'requirements.txt'])
+    subprocess.run(['pip3', 'install', '--user', '-r', 'req.txt'])
 
 finally:
     import cv2, youtube_dl
