@@ -34,7 +34,7 @@ def downloader():
         file_title = ydl._filename
         print(file_title)
 
-def splitter():self.url
+def splitter():
     cap = cv2.VideoCapture(file_title)
     try:
         if not os.path.exists('data'):
@@ -44,7 +44,7 @@ def splitter():self.url
     currentFrame = 0
     while(True):
     # Capture frame-by-frame
-        ret, frame = cap.read(
+        ret, frame = cap.read()
     # Saves the current frame in jpg file
     name = './data/frame' + str(currentFrame) + '.jpg'
     print ('Creating...' + name)
