@@ -5,7 +5,6 @@ import os
 import json
 import youtube_dl
 import cv2
-import numpy as np
 
 
 def signal_handler(sig, frame):
@@ -34,6 +33,7 @@ def downloader():
         file_title = ydl._filename
         print(file_title)
 
+        
 def splitter():
     cap = cv2.VideoCapture(file_title)
     try:
@@ -62,5 +62,6 @@ def main():
     downloader()
     splitter()
 
+    
 if __name__ == "__main__":
     main()
