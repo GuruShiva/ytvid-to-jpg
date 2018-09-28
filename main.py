@@ -24,17 +24,13 @@ def checkdir():
 
 def downloader():
     global file_title
-    ydl_opts = {'forcefilename': True, 'forcetitle': True, 'outtmpl': '%(title)s', 'forcejson': True,}
+    max_downloads = str(10)
+    search_title = str(input("Enter search query :\n"))
+    amount = str(input("How many videos to download?: "))
+    ydl_opts = {'default_search': "ytsearch", 'forcejson': False, 'forceurl': False, 'skip_download': False, 'max_downloads': max_downloads}
     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-        # search_title = str(input("Enter title:\n"))
-        # amount = str(input(
-        # "How many videos would you like to be downloaded?\n"))
-        search_title = str(input("Enter a video URL:\n"))
-        # result = ydl.extract_info("ytsearch{}:{}".format(amount, search_title))
-        result = ydl.extract_info(search_title)
-        print('----------------------------')
-        print(result['title'])
-        print('----------------------------')
+        
+        result = ydl.extract_info("ytsearch{}:{}".format(amount, search_title))
 # def splitter():
 #     cap = cv2.VideoCapture(file_title)
 #     try:
