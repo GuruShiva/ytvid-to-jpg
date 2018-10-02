@@ -21,15 +21,11 @@ def walk():
     global absolutePath, categoryName
     absolutePath = sys.path[0]
     categoryName = input("What is the category name?:\n")
-    dir_exists = os.path.isdir('./{}'.format(categoryName))
-    if dir_exists == True:
-        pass
-    else:
-        print("{} doesn't exist, creating it now.".format(categoryName))
-        counter = 0
-        for files in os.walk('{}/data'.format(absolutePath)):
-            counter += 1
-            os.makedirs('{}_{}'.format(categoryName, counter))
+    print("{} doesn't exist, creating it now.".format(categoryName))
+    counter = 0
+    for files in os.walk('{}/data'.format(absolutePath)):
+        counter += 1
+        os.makedirs('{}_{}'.format(categoryName, counter))
     for file_name in absolutePath:
         full_file_name = os.path.join(absolutePath, file_name)
         if (os.path.isfile(full_file_name)):
@@ -42,7 +38,7 @@ def downloader():
     os.makedirs('data')
     os.chdir('{}/data'.format(absolutePath))
     max_downloads = 10
-    ydl_opts = {'forcefilename': True, 'forcetitle': True, 'outtmpl': '%(title)s',}
+    ydl_opts = {'forcefilename': True, 'forcetitle': True, 'format':'mp4', 'outtmpl': '%(title)s',}
     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
         search_title = str(input("Enter title:\n"))
         amount = str(input(
@@ -50,12 +46,26 @@ def downloader():
         result = ydl.extract_info("ytsearch{}:{}".format(amount, search_title))
     walk()
 
+
+def fileList(src):
+    counter = 0
+    matches = []
+    for root, dirnames, filenames in os.walk(src):
+        for filename in filenames:
+            if filename.endswith(('mp4','mkv', '.mov', '.MOV', '.avi', '.mpg')):
+                matches.append(os.path.join(root, filename))
+                counter += 1
+    return matches
+
+
+
 # Trying to simulate the same os walk loop to redirect and render the frames
 # Does't work yet
 def splitter():
     global categoryName
     absolutePath = sys.path[0]
-    counter = 0
+    dataPath = "{}/data".format(absolutePath)
+    counter = 1
     for file_name in absolutePath:
         os.chdir('{}_{}'.format(categoryName, counter))
         counter += 1
@@ -65,11 +75,14 @@ def splitter():
         currentFrame = str(input("Which frame should we start from?:\n"))
         currentSeek = "00:00:00.000"
         frameName = "frame%04d.jpg"
-        subprocess.run(
-        ["ffmpeg","-i",fileName, currentSeek, "-vframes", currentFrame, frameName, \
-        "-hide_banner"]
-                      )
-
+        fileName = fileList('{}/data/{}_{}'.format(absolutePath, categoryName, counter))
+        i = 0
+        while i < len (fileName):
+            subprocess.run(
+            ["ffmpeg","-i",fileName, currentSeek, "-vframes", currentFrame, frameName, \
+            "-hide_banner"]
+                          )
+            i += 1
 
 def main():
     signal.signal(signal.SIGINT, signal_handler)
