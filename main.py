@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
+import argparse
 import sys
 import signal
 import os
 import json
+import subprocess
+import shutil
 import youtube_dl
-import cv2
 
 
 def signal_handler(sig, frame):
@@ -13,48 +15,59 @@ def signal_handler(sig, frame):
     sys.exit(1)
 
 
-def checkdir():
-    dir_exists = os.path.isdir('./main_dl')
+def walk():
+    # Set the script directory path to a variable to later come back to because
+    # YDL sucks in setting a proper download destination
+    global absolutePath, categoryName
+    absolutePath = sys.path[0]
+    categoryName = input("What is the category name?:\n")
+    dir_exists = os.path.isdir('./{}'.format(categoryName))
     if dir_exists == True:
         pass
     else:
-        print("Download directory doesn't exist, creating it now.")
-        os.makedirs('./main_dl')
+        print("{} doesn't exist, creating it now.".format(categoryName))
+        counter = 0
+        for files in os.walk('{}/data'.format(absolutePath)):
+            counter += 1
+            os.makedirs('{}_{}'.format(categoryName, counter))
+    for file_name in absolutePath:
+        full_file_name = os.path.join(absolutePath, file_name)
+        if (os.path.isfile(full_file_name)):
+            shutil.copy2(full_file_name, categoryName)
+
 
 
 def downloader():
-    global file_title
-    ydl_opts = {'forcefilename': True, 'forcetitle': True, 'outtmpl': '%(title)s', 'forcejson': True,}
+    absolutePath = sys.path[0]
+    os.makedirs('data')
+    os.chdir('{}/data'.format(absolutePath))
+    max_downloads = 10
+    ydl_opts = {'forcefilename': True, 'forcetitle': True, 'outtmpl': '%(title)s',}
     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
         search_title = str(input("Enter title:\n"))
         amount = str(input(
         "How many videos would you like to be downloaded?\n"))
         result = ydl.extract_info("ytsearch{}:{}".format(amount, search_title))
-        file_title = ydl._filename
-        print(file_title)
+    walk()
 
-        
+
 def splitter():
-    cap = cv2.VideoCapture(file_title)
-    try:
-        if not os.path.exists('data'):
-            os.makedirs('data')
-    except OSError:
-        print ('There was an error creating the data directory')
-    currentFrame = 0
-    while(True):
-    # Capture frame-by-frame
-        ret, frame = cap.read()
-    # Saves the current frame in jpg file
-    name = './data/frame' + str(currentFrame) + '.jpg'
-    print ('Creating...' + name)
-    cv2.imwrite(name, frame)
-    # To stop duplicate images
-    currentFrame += 1
-# When everything is done, release the capture
-    cap.release()
-    cv2.destroyAllWindows()
-
+    global categoryName
+    absolutePath = sys.path[0]
+    counter = 0
+    for file_name in absolutePath:
+        os.chdir('{}_{}'.format(categoryName, counter))
+        counter += 1
+        cwd = os.getcwd()
+        print("Changed the working directory to {}".format(cwd))
+        global currentFrame, currentSeek
+        currentFrame = str(input("Which frame should we start from?:\n"))
+        currentSeek = "00:00:00.000"
+        frameName = "frame%04d.jpg"
+        subprocess.run(
+        ["ffmpeg","-i",fileName, currentSeek, "-vframes", currentFrame, frameName, \
+        "-hide_banner"]
+                      )
 
 
 def main():
@@ -62,6 +75,6 @@ def main():
     downloader()
     splitter()
 
-    
+
 if __name__ == "__main__":
     main()
