@@ -50,7 +50,8 @@ def downloader():
         result = ydl.extract_info("ytsearch{}:{}".format(amount, search_title))
     walk()
 
-
+# Trying to simulate the same os walk loop to redirect and render the frames
+# Does't work yet
 def splitter():
     global categoryName
     absolutePath = sys.path[0]
