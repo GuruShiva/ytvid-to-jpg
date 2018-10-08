@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-import argparse
+#!/home/ml/anaconda3/bin/python3
 import sys
 import signal
 import os
@@ -7,87 +6,112 @@ import json
 import subprocess
 import shutil
 import youtube_dl
-
+import extract_frame
+import yt_downloader
+from datetime import datetime
 
 def signal_handler(sig, frame):
     print("\nCaught SIGINT")
     print("Program terminated")
     sys.exit(1)
 
-
-def walk():
-    # Set the script directory path to a variable to later come back to because
-    # YDL sucks in setting a proper download destination
-    global absolutePath, categoryName
-    absolutePath = sys.path[0]
-    categoryName = input("What is the category name?:\n")
-    print("{} doesn't exist, creating it now.".format(categoryName))
-    counter = 0
-    for files in os.walk('{}/data'.format(absolutePath)):
-        counter += 1
-        os.makedirs('{}_{}'.format(categoryName, counter))
-    for file_name in absolutePath:
-        full_file_name = os.path.join(absolutePath, file_name)
-        if (os.path.isfile(full_file_name)):
-            shutil.copy2(full_file_name, categoryName)
+def get_config(absolutePath):
+    with open('{}/data/config/data.json'.format(absolutePath), 'r') as json_data_file:
+        data = json.loads(json_data_file.read())
+        return (data)
 
 
 
-def downloader():
-    absolutePath = sys.path[0]
-    os.makedirs('data')
-    os.chdir('{}/data'.format(absolutePath))
-    max_downloads = 10
-    ydl_opts = {'forcefilename': True, 'forcetitle': True, 'format':'mp4', 'outtmpl': '%(title)s',}
-    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-        search_title = str(input("Enter title:\n"))
-        amount = str(input(
-        "How many videos would you like to be downloaded?\n"))
-        result = ydl.extract_info("ytsearch{}:{}".format(amount, search_title))
-    walk()
+def get_vid_class(vid_dir, data):
+    for item in data['data']:
+        class_name =  [item['category']]
+        for c in class_name:
+            mk_vid_cat_dir(vid_dir,c)
 
 
-def fileList(src):
-    counter = 0
-    matches = []
-    for root, dirnames, filenames in os.walk(src):
-        for filename in filenames:
-            if filename.endswith(('mp4','mkv', '.mov', '.MOV', '.avi', '.mpg')):
-                matches.append(os.path.join(root, filename))
-                counter += 1
-    return matches
+def get_img_class(img_dir, data):
+    for item in data['data']:
+        class_name =  [item['category']]
+        for c in class_name:
+            mk_img_cat_dir(img_dir,c)
+
+def mk_data_dir(absolutePath):
+    vid_data_dir = absolutePath + "/data/videos"
+    img_data_dir = absolutePath + "/data/images"
+    if not os.path.exists(vid_data_dir):
+        print ("Path does not exist. Creating directory")
+        os.makedirs(vid_data_dir)
+    if not os.path.exists(img_data_dir):
+        print ("Path does not exist. Creating directory")
+        os.makedirs(img_data_dir)
+    
+    return vid_data_dir, img_data_dir
+    
+
+def mk_vid_cat_dir(vid_dir, dir):
+    mkdir_path = vid_dir + '/' + dir
+    if not os.path.exists(mkdir_path):
+        print ("Path does not exist. Creating directory")
+        os.makedirs(mkdir_path)
 
 
+def mk_img_cat_dir(img_dir, dir):
+    mkdir_path = img_dir + '/' + dir
+    if not os.path.exists(mkdir_path):
+        print ("Path does not exist. Creating directory")
+        os.makedirs(mkdir_path)
 
-# Trying to simulate the same os walk loop to redirect and render the frames
-# Does't work yet
-def splitter():
-    global categoryName
-    absolutePath = sys.path[0]
-    dataPath = "{}/data".format(absolutePath)
-    counter = 1
-    for file_name in absolutePath:
-        os.chdir('{}_{}'.format(categoryName, counter))
-        counter += 1
-        cwd = os.getcwd()
-        print("Changed the working directory to {}".format(cwd))
-        global currentFrame, currentSeek
-        currentFrame = str(input("Which frame should we start from?:\n"))
-        currentSeek = "00:00:00.000"
-        frameName = "frame%04d.jpg"
-        fileName = fileList('{}/data/{}_{}'.format(absolutePath, categoryName, counter))
-        i = 0
-        while i < len (fileName):
-            subprocess.run(
-            ["ffmpeg","-i",fileName, currentSeek, "-vframes", currentFrame, frameName, \
-            "-hide_banner"]
-                          )
-            i += 1
+
+def get_search_query(vid_dir,data):
+    for item in data['data']:
+        cats =  [item['category']]
+        search = [item['search']]
+        for c in cats:
+            class_dir = vid_dir + '/' + c
+            
+        for s in search:
+            for k,v in s.items():
+                yt_downloader.downloader(class_dir, v)
+                
+
+
+def get_vid_filepath(vid_dir):
+    subdir= next(os.walk(vid_dir))[1]
+    return ([vid_dir +'/'+ s for s in subdir])
+
+
+def get_vid_file(vid_dir_file_list,img_dir):
+    for i in vid_dir_file_list:
+            dir_name = os.path.basename(i)
+            files = os.listdir(i)
+            img_dir_class = img_dir + '/' + dir_name + '/'
+            for file in files:
+                if file.endswith(".mp4"):
+                    splitter(dir_name, i + '/' + file, img_dir_class)
+
+def splitter(dir_name, file, img_dir_class):
+        file_name = dir_name
+        file = file
+        output_path = img_dir_class
+        extract_frame.extractFrames(file_name,file,output_path)
+        
 
 def main():
+    start=datetime.now()
     signal.signal(signal.SIGINT, signal_handler)
-    downloader()
-    splitter()
+    absolutePath = sys.path[0]
+    data=(get_config(absolutePath))
+    dirs= mk_data_dir(absolutePath)
+    vid_dir = (dirs[0])
+    img_dir = (dirs[1])
+    get_vid_class(vid_dir, data)
+    get_img_class(img_dir,data)
+    search_query = get_search_query(vid_dir,data)
+    vid_dir_file_list = get_vid_filepath(vid_dir)
+    get_vid_file(vid_dir_file_list, img_dir)
+    print (datetime.now()-start)
+    print ("FINISHED!")
+  
 
 
 if __name__ == "__main__":
